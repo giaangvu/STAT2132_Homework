@@ -1,0 +1,161 @@
+---
+title: "HW4"
+author: "Giang Vu"
+date: "2/16/2021"
+header-includes:
+   - \usepackage[normalem]{ulem}
+   - \useunder{\uline}{\ul}{}
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Homework 4
+
+### 1.
+
+#### (c)
+
+The design matrix is 42x7 (top matrix) where each row is a possible outcome of a two-team match. For example the first row is 1 in first column entry, -1 in the second column entry, and 0 for the remaining 5 entries, which represents the match of team 1 vs team 2, and team 1 wins, team 2 loses, the remaining 5 teams don't compete in this match. This follows for the rest of the design matrix. 
+
+\begin{table}[]
+\begin{tabular}{|lllllll|}
+1  & -1 & 0  & 0  & 0  & 0  & 0  \\
+1  & 0  & -1 & 0  & 0  & 0  & 0  \\
+1  & 0  & 0  & -1 & 0  & 0  & 0  \\
+1  & 0  & 0  & 0  & -1 & 0  & 0  \\
+1  & 0  & 0  & 0  & 0  & -1 & 0  \\
+1  & 0  & 0  & 0  & 0  & 0  & -1 \\
+0  & 1  & -1 & 0  & 0  & 0  & 0  \\
+0  & 1  & 0  & -1 & 0  & 0  & 0  \\
+0  & 1  & 0  & 0  & -1 & 0  & 0  \\
+0  & 1  & 0  & 0  & 0  & -1 & 0  \\
+0  & 1  & 0  & 0  & 0  & 0  & -1 \\
+0  & 0  & 1  & -1 & 0  & 0  & 0  \\
+0  & 0  & 1  & 0  & -1 & 0  & 0  \\
+0  & 0  & 1  & 0  & 0  & -1 & 0  \\
+0  & 0  & 1  & 0  & 0  & 0  & -1 \\
+0  & 0  & 0  & 1  & -1 & 0  & 0  \\
+0  & 0  & 0  & 1  & 0  & -1 & 0  \\
+0  & 0  & 0  & 1  & 0  & 0  & -1 \\
+0  & 0  & 0  & 0  & 1  & -1 & 0  \\
+0  & 0  & 0  & 0  & 1  & 0  & -1 \\
+0  & 0  & 0  & 0  & 0  & 1  & -1 \\
+-1 & 1  & 0  & 0  & 0  & 0  & 0  \\
+-1 & 0  & 1  & 0  & 0  & 0  & 0  \\
+-1 & 0  & 0  & 1  & 0  & 0  & 0  \\
+-1 & 0  & 0  & 0  & 1  & 0  & 0  \\
+-1 & 0  & 0  & 0  & 0  & 1  & 0  \\
+-1 & 0  & 0  & 0  & 0  & 0  & 1  \\
+0  & -1 & 1  & 0  & 0  & 0  & 0  \\
+0  & -1 & 0  & 1  & 0  & 0  & 0  \\
+0  & -1 & 0  & 0  & 1  & 0  & 0  \\
+0  & -1 & 0  & 0  & 0  & 1  & 0  \\
+0  & -1 & 0  & 0  & 0  & 0  & 1  \\
+0  & 0  & -1 & 1  & 0  & 0  & 0  \\
+0  & 0  & -1 & 0  & 1  & 0  & 0  \\
+0  & 0  & -1 & 0  & 0  & 1  & 0  \\
+0  & 0  & -1 & 0  & 0  & 0  & 1  \\
+0  & 0  & 0  & -1 & 1  & 0  & 0  \\
+0  & 0  & 0  & -1 & 0  & 1  & 0  \\
+0  & 0  & 0  & -1 & 0  & 0  & 1  \\
+0  & 0  & 0  & 0  & -1 & 1  & 0  \\
+0  & 0  & 0  & 0  & -1 & 0  & 1  \\
+0  & 0  & 0  & 0  & 0  & -1 & 1 
+\end{tabular}
+\end{table}
+
+But because of the symmetry of this matrix, we can have a design that is only 21x7 like the bottom matrix
+
+\begin{table}[]
+\begin{tabular}{|lllllll|}
+{\ul 1} & -1 & 0  & 0  & 0  & 0  & 0  \\
+1       & 0  & -1 & 0  & 0  & 0  & 0  \\
+1       & 0  & 0  & -1 & 0  & 0  & 0  \\
+1       & 0  & 0  & 0  & -1 & 0  & 0  \\
+1       & 0  & 0  & 0  & 0  & -1 & 0  \\
+1       & 0  & 0  & 0  & 0  & 0  & -1 \\
+0       & 1  & -1 & 0  & 0  & 0  & 0  \\
+0       & 1  & 0  & -1 & 0  & 0  & 0  \\
+0       & 1  & 0  & 0  & -1 & 0  & 0  \\
+0       & 1  & 0  & 0  & 0  & -1 & 0  \\
+0       & 1  & 0  & 0  & 0  & 0  & -1 \\
+0       & 0  & 1  & -1 & 0  & 0  & 0  \\
+0       & 0  & 1  & 0  & -1 & 0  & 0  \\
+0       & 0  & 1  & 0  & 0  & -1 & 0  \\
+0       & 0  & 1  & 0  & 0  & 0  & -1 \\
+0       & 0  & 0  & 1  & -1 & 0  & 0  \\
+0       & 0  & 0  & 1  & 0  & -1 & 0  \\
+0       & 0  & 0  & 1  & 0  & 0  & -1 \\
+0       & 0  & 0  & 0  & 1  & -1 & 0  \\
+0       & 0  & 0  & 0  & 1  & 0  & -1 \\
+0       & 0  & 0  & 0  & 0  & 1  & -1
+\end{tabular}
+\end{table}
+
+\newpage
+#### (d)
+
+If each team has the same home field advantage, we could think of it as an intercept for our model, which then will make our design matrix become 21x8, with a new first column full of 1's to represent the intercept. The new design matrix is displayed below.
+
+\begin{table}[]
+\begin{tabular}{|llllllll|}
+1 & 1 & -1 & 0  & 0  & 0  & 0  & 0  \\
+1 & 1 & 0  & -1 & 0  & 0  & 0  & 0  \\
+1 & 1 & 0  & 0  & -1 & 0  & 0  & 0  \\
+1 & 1 & 0  & 0  & 0  & -1 & 0  & 0  \\
+1 & 1 & 0  & 0  & 0  & 0  & -1 & 0  \\
+1 & 1 & 0  & 0  & 0  & 0  & 0  & -1 \\
+1 & 0 & 1  & -1 & 0  & 0  & 0  & 0  \\
+1 & 0 & 1  & 0  & -1 & 0  & 0  & 0  \\
+1 & 0 & 1  & 0  & 0  & -1 & 0  & 0  \\
+1 & 0 & 1  & 0  & 0  & 0  & -1 & 0  \\
+1 & 0 & 1  & 0  & 0  & 0  & 0  & -1 \\
+1 & 0 & 0  & 1  & -1 & 0  & 0  & 0  \\
+1 & 0 & 0  & 1  & 0  & -1 & 0  & 0  \\
+1 & 0 & 0  & 1  & 0  & 0  & -1 & 0  \\
+1 & 0 & 0  & 1  & 0  & 0  & 0  & -1 \\
+1 & 0 & 0  & 0  & 1  & -1 & 0  & 0  \\
+1 & 0 & 0  & 0  & 1  & 0  & -1 & 0  \\
+1 & 0 & 0  & 0  & 1  & 0  & 0  & -1 \\
+1 & 0 & 0  & 0  & 0  & 1  & -1 & 0  \\
+1 & 0 & 0  & 0  & 0  & 1  & 0  & -1 \\
+1 & 0 & 0  & 0  & 0  & 0  & 1  & -1
+\end{tabular}
+\end{table}
+
+\newpage
+
+### 2.
+
+#### (a)
+
+When $Y \sim$ Poisson($\mu$), the pf for Y with parameter $\mu>0$ is
+
+\begin{equation}
+\begin{aligned}
+f(y,\mu)&=\frac{\mu^y}{y!}e^{-\mu} \\
+&=e^{ylog(\mu)}e^{-\mu}\frac{1}{y!} \\
+&=exp\{ylog(\mu)-\mu\}\frac{1}{y!} \\
+\end{aligned}
+\end{equation}
+
+Here $\theta=log(\mu)$, $\phi=1$, $K(\theta)=\mu$, and $h(y,\phi)=\frac{1}{y!}$
+
+When $Y \sim$ N($\mu,\sigma^2$), the pdf for Y with parameters $\mu$ and $\sigma$ is
+
+\begin{equation}
+\begin{aligned}
+f(y,\mu,\sigma)&=\frac{1}{\sigma\sqrt{2\pi}}exp\{-\frac{1}{2}({\frac{y-\mu}{\sigma}})^2\} \\
+&=exp\{\frac{-\frac{1}{2}y^2-\frac{1}{2}\mu^2+y\mu}{\sigma^2}\}\frac{1}{\sigma\sqrt{2\pi}} \\
+&=exp\{\frac{y\mu-\frac{1}{2}\mu^2}{\sigma^2}\}exp\{-\frac{y^2}{2\sigma^2}\}\frac{1}{\sqrt{2\pi\sigma^2}} \\
+\end{aligned}
+\end{equation}
+
+Here $\theta=\mu$, $\phi=\sigma^2$, $K(\theta)=\frac{1}{2}\mu^2$, and $h(y,\phi)=exp\{-\frac{y^2}{2\sigma^2}\}\frac{1}{\sqrt{2\pi\sigma^2}}$
+
+
+
+
