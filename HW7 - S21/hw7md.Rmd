@@ -1,0 +1,130 @@
+---
+title: "HW7"
+author: "Giang Vu"
+date: "3/22/2021"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = F,warning=FALSE,out.width="80%")
+```
+
+```{r}
+wheat <- data.frame(read.table(file = "/Users/giangvu/Desktop/STAT 2132 - Applied Stat Method 2/HW/HW7/wheat56.txt", header = T, sep = "\t", stringsAsFactors = F))
+
+#mark the 4 blocks
+wheat$block <- c(rep(1,56),rep(2,56),rep(3,56),rep(4,56))
+wheat$block <- factor(wheat$block, levels = c(1,2,3,4), labels = c("1","2","3","4"), ordered = F)
+wheat$Variety <- factor(wheat$Variety)
+```
+
+### 3.
+
+#### (a)
+
+I fitted the standard model for an RCBD treating blocks and varieties as fixed effects, and the coefficient estimate for Variety isn't statistically significant.\
+That means that there are no significant differences among yield of different varieties.\
+Included below is also the residual plot.\
+The p-value for the F test for the hypothesis of no variety effects is 0.7119, which is quite large, so we can't reject this hypothesis.\
+
+```{r}
+#fit model
+wheat.fit1 <- lm(Yield~Variety+block,data = wheat)
+anova(wheat.fit1)
+wheat.sum1 <- summary(wheat.fit1)
+
+#residual plot
+plot(wheat$Variety,wheat.fit1$residuals)
+
+```
+
+#### (b)
+
+The estimation of the difference between two means is\
+$\hat{D}=8.813$\
+The standard error of this estimate is\
+$s^2\{\hat{D}\}=39.275$\
+With $r=56$ and $n_T-r=224-56=168$, we obtained thee percentile for the studentized range distribution $q(.95;56,168)=5.835$\
+Therefore $T=\frac{1}{\sqrt{2}}q(.95;56,168)=4.126$\
+The 95% CI for the mean yield of varieties 1-20 minus the mean yield of varieties 21-56 is $\hat{D}\pm Ts\{\hat{D}\}$, which is (-153.2498, 170.8748).\
+
+```{r}
+# Tukey's
+D.hat <- abs(mean(wheat.fit1$fitted.values[as.numeric(wheat$Variety) <= 20]) - mean(wheat.fit1$fitted.values[as.numeric(wheat$Variety) >20]))
+s.D.hat <- sqrt((anova(wheat.fit1)['Residuals', 'Mean Sq'])*(1/20 + 1/36))
+SE <- 1/sqrt(2)*qtukey(p = 0.95, nmeans = 56, df = 168)
+lower <- D.hat - SE*s.D.hat
+upper <- D.hat + SE*s.D.hat
+```
+
+#### (c)
+
+Below is the residual plots versus longitude and latitude. I noticed there are some certain patterns.\
+Lower longitudes tend to have more negative residuals, so therefore have underestimated yields.\
+On the other hand, higher latitudes have more negative residuals so varieties with higher latitude have more underestimated yields.\
+This could mean that the model we are assuming might not be good enough, and we might need to include Longitude and Latitude in our model.\
+
+```{r}
+plot(wheat$Longitude, wheat.fit1$residuals, main = "Longitude vs. Residuals", xlab = "Longitude", ylab = "Residuals")
+abline(h = 0)
+```
+
+```{r}
+plot(wheat$Latitude, wheat.fit1$residuals, main = "Latitude vs. Residuals", xlab = "Latitude", ylab = "Residuals")
+abline(h = 0)
+
+```
+
+#### (d)
+
+When we added a linear function of the coordinates in our model, the p value for variety effects is smaller but is still not statistically significant at level 0.05.\
+I also noticed the standard errors of each variety's estimated effect are reduced a lot compared to the original model.\
+When we plot the residuals as a function of the geographic coordinates of the plots, the patterns identified in part (c) seem to disappear, as the residuals are more evenly scattered across the plots, regardless of the size of longitude and latitude.\
+
+```{r}
+wheat.fit2 <- lm(Yield~Variety+block+Latitude+Longitude,data = wheat)
+anova(wheat.fit2)
+wheat.sum2 <- summary(wheat.fit2)
+#estimate for variety still not signi
+
+plot(wheat$Longitude, wheat.fit2$residuals, main = "Longitude vs. Residuals", xlab = "Longitude", ylab = "Residuals")
+abline(h = 0)
+```
+
+```{r}
+plot(wheat$Latitude, wheat.fit2$residuals, main = "Latitude vs. Residuals", xlab = "Latitude", ylab = "Residuals")
+abline(h = 0)
+#residual plot no pattern
+```
+
+
+#### (e)
+
+When we added a second order polynomial  of the coordinates in our model, the p value for variety effects is much smaller and now is statistically significant at level 0.05.\
+The standard errors of each variety's estimated effect are reduced even more compared to original model and model in part (d).\
+When we plot the residuals as a function of the geographic coordinates of the plots, the patterns identified in part (c) seem to disappear as well, as the residuals are more evenly scattered across the plots, regardless of the size of longitude and latitude, just like residual plots in part (d).\
+
+```{r}
+wheat.fit3 <- lm(Yield~Variety+block+Latitude+Longitude+I(Latitude^2)+I(Longitude^2),data = wheat)
+anova(wheat.fit3)
+wheat.sum3 <- summary(wheat.fit3)
+#estimate for variety signi now
+
+plot(wheat$Longitude, wheat.fit3$residuals, main = "Longitude vs. Residuals", xlab = "Longitude", ylab = "Residuals")
+abline(h = 0)
+```
+
+```{r}
+plot(wheat$Latitude, wheat.fit3$residuals, main = "Latitude vs. Residuals", xlab = "Latitude", ylab = "Residuals")
+abline(h = 0)
+#residual plot looks the same as d, better than c
+
+```
+
+#### (f)
+
+After carrying out all the above analyses, I think this study should be redesigned so that the main factor is a new variable that contains information about both variety and geographical coordinates.\
+With the original model, we saw no variety effects when we fit it, and that problem went away when we included coordinates into our model.\
+That means the yields of wheat might be explained by both variety and geographical location.\
+
+
