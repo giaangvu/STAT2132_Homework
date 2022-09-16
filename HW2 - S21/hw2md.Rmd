@@ -1,0 +1,137 @@
+---
+title: "hw2"
+author: "Giang Vu"
+date: "2/3/2021"
+output: pdf_document
+---
+
+```{r message=FALSE, warning=FALSE, include=FALSE, paged.print=FALSE}
+library(ggrepel)
+library(ggplot2)
+library(dplyr)
+library(Hmisc)
+library(readxl)
+library(DBI)
+library(odbc)
+library(readr)
+library(writexl)
+library(knitr)
+library(clipr)
+library(car)
+library(MASS)
+library(np)
+library(olsrr)
+library(chemometrics)
+library(pls)
+library(glmnet)
+library(bootstrap)
+library(boot)
+```
+
+## Homework 2
+
+### 1.
+
+#### (a)
+
+The starting points for Gauss-Newton I chose are 25 for gamma0 and 1 for gamma1.  
+  From the equation  
+  $1/E(Y_i) = (1/X_i)\gamma_1/\gamma_0 + 1/\gamma_0$  
+  $\rightarrow$ As X approaches infinity, $1/X_i$ approaches 0.   
+  $\rightarrow$ Then $1/E(Y_i)$ approaches $1/\gamma_0$, or $Y_i$ approaches $\gamma_0$.  
+  $\rightarrow$ $\gamma_0$ is the horizontal asymptote of this function.   
+  From the plot of the data, the points seem to converge towards near 25, so I picked 25 as the starting point.   
+  Also, as X increases, Y also increases, so I expect $\gamma_1$ to be positive, and the magnitude of it tells us how fast Y increases as X increases, so I picked the starting value 1.   
+
+```{r echo=TRUE, warning=FALSE}
+#read data
+enzyme <- read.delim("/Users/giangvu/Desktop/STAT 2132 - Applied Stat Method 2/HW/HW2/Enzyme.txt")
+
+#plot data
+plot(enzyme$X, enzyme$Y, xlab="Concentration", ylab="Velocity")
+```
+
+#### (b)
+
+Gamma0 and gamma1 are estimated using the starting points from part (a) below
+ 
+```{r echo=TRUE, warning=FALSE}
+#nls
+out.start <- nls(Y ~ (gamma0*X)/(gamma1 + X), data = enzyme, start = list(gamma0=25,gamma1=1))
+#estimates for gamma's
+gamma.hat <- out.start$m$getAllPars()
+gamma.hat
+```
+
+### 2.
+
+#### (a)
+
+The fit seems to be adequate.
+
+```{r echo=TRUE, warning=FALSE}
+#plot data 
+plot(enzyme$X, enzyme$Y, xlab="Concentration", ylab="Velocity")
+#add the nonlinear regression function line
+lines(enzyme$X, out.start$m$fitted(), col="red")
+```
+
+#### (b)
+
+Based on the residual plot and the qq-plot, the assumptions of constant variances and normality are both satisfied. The residual plots show no trend, and the tail of the qq-plot shows no skewness.
+
+```{r echo=TRUE, warning=FALSE}
+#residual plot - constant variances - satisfied
+plot(out.start$m$fitted(), out.start$m$resid(), xlab="Fitted values", ylab="Residuals"); abline(h=0, col="red", lty=2)
+#qq plot - normality
+qqnorm(out.start$m$resid(), ylab="Residuals")
+qqline(out.start$m$resid(), col="red")
+```
+
+#### (c)
+
+Null hypothesis: Gamma1 = 20  
+  Alternative hypothesis: Gamma1 different from 20  
+  Assumptions: The residuals are not correlated with X, and with each other. They are also normally distributed.
+  The test statistic is -9.73141 with 16 degrees of freedom.  
+  The p-value is basically 0, very small   
+  The 95% CI is (11.23,13.91)  
+  We reject the null hypothesis, we have strong evidence to conclude that gamma1 cannot be equal to 20.    
+  
+```{r echo=TRUE, warning=FALSE}
+#test gamma1 = 20
+#Jacobian
+J <- out.start$m$gradient()   #The 44 x 2 gradient matrix. This acts as our design matrix.
+#MSE
+sigma2 <- sum(out.start$m$resid()^2)/(nrow(J)-ncol(J)) #nrow(J) = n, ncol(J) = p
+#SE for inference
+se.gamma0 <- sqrt(sigma2)*sqrt( solve(t(J)%*%J)[1,1] )
+se.gamma1 <- sqrt(sigma2)*sqrt( solve(t(J)%*%J)[2,2] )
+#t-stat for test gamma1 = 20, df = n-p = 16 
+t.gam1 <- (gamma.hat[2]-20)/se.gamma1
+
+#CI
+CI.gamma0 <- gamma.hat[1] + c(-1,1)*se.gamma0*qt(p = 0.95, df = nrow(J)-ncol(J))
+CI.gamma1 <- gamma.hat[2] + c(-1,1)*se.gamma1*qt(p = 0.95, df = nrow(J)-ncol(J))
+```
+
+### 3.
+
+After running a bootstrap with 1000 samples, the 95% percentile confidence intervals for gamma1 obtained is (11.03, 13.94). This is quite close compared to the interval based on the large sample theory we obtained in problem 2.
+
+```{r echo=TRUE, warning=FALSE}
+#bootstrap with 1000 samples
+set.seed(200)
+enzyme_bootfcn <- function(x,i){
+  d<-x[i,]
+  out.boot <- nls(Y ~ (gamma0*X)/(gamma1 + X), data = d, start = list(gamma0=25,gamma1=1))
+  gamma.boot <- out.boot$m$getAllPars()
+  return(gamma.boot[2])
+}
+enzyme_bootobj <- boot(enzyme,enzyme_bootfcn,R=1000)
+head(enzyme_bootobj$t)
+#bootstrap 95% percentile CI
+enzyme_bootci <- boot.ci(enzyme_bootobj)
+enzyme_bootci
+```
+
