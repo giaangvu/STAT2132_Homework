@@ -1,0 +1,159 @@
+---
+title: "2132 HW1"
+author: "Junyi Bai"
+date: "2022/1/16"
+output:
+  pdf_document:
+    latex_engine: xelatex
+---
+
+1
+=========
+
+```{r setup, include=FALSE}
+library("nlstools")
+library("EnvStats")
+```
+
+
+First, we input data.
+```{r}
+Kinet <- read.csv("/Users/giangvu/Desktop/STAT 2132 - Applied Stat Method 2/SPR22/hw/13.10.csv",header = T)
+colnames(Kinet) <- c("Y","X")
+```
+
+(1)
+---------
+Now we use $Y_i^{\prime}=1/Y_i,\ X_i^{\prime}=1/X_i,\ \beta_0=1/\gamma_0,\ \beta_1=\gamma_1/\gamma_0$ to fit a linear model. 
+```{r}
+Kinet_t <- matrix(nrow = 18,ncol = 2)
+Kinet_t[,1] <- 1/Kinet$Y
+Kinet_t[,2] <- 1/Kinet$X
+lm1 <- lm(Kinet_t[,1]~Kinet_t[,2])
+summary(lm1)
+gamma0 <- 1/lm1$coefficients[1]
+gamma1 <- lm1$coefficients[2]*gamma0
+```
+
+Thus, our initial value is: $g_0^{(0)}=29.6, g_1^{(0)}=13.4$.
+
+(2)
+-------
+
+Now we use our initial values to fit the nonlinear model.
+```{r}
+formula1 <- as.formula(Y ~ g0*X/(g1+X))
+nlm1 <- nls(formula1,data=Kinet,start = list(g0=gamma0,g1=gamma1))
+summary(nlm1)
+```
+
+Here we can see that the estimated $\hat{\gamma_0}=28.1370$ and $\hat{\gamma_1}=12.5745$.
+
+\newpage
+
+2
+=======
+
+(1)
+--------
+
+Plot the estimated nonlinear regression function and data.
+```{r}
+curve(28.1370*x/(12.5745+x),0,50,xlab = "X",ylab = "Y") #used the estimates from the nls above
+points(Kinet$X,Kinet$Y)
+```
+
+According to the plot, I think the fir appear to be adequate.
+
+(2)
+------
+
+Plot the residuals against the fitted values.
+```{r}
+nlm1_Res <- nlsResiduals(nlm1)
+plot(nlm1_Res$resi1)
+```
+Now we plot the qq-plot.
+```{r}
+qqPlot(nlm1_Res$resi1[,1],nlm1_Res$resi1[,2])
+```
+
+According to the qq-plot, our fitted model satisfies the normality hypothesis.
+
+c) Next, using large sample theory, we can compute the standard error of our estimators:
+
+
+```{r}
+J = nlm1$m$gradient()
+mse = sum(nlm1$m$resid()^2)/(nrow(J)-ncol(J))
+se.gamma0 = sqrt(mse)*sqrt( solve(t(J)%*%J)[1,1] )
+se.gamma1 = sqrt(mse)*sqrt( solve(t(J)%*%J)[2,2] )
+
+t_value = (gamma_hat[2]-20)/se.gamma1
+p_value = 2*pt(t_value,df = nrow(J)-ncol(J))
+
+CI.gamma0 = gamma_hat[1] + c(-1,1)*se.gamma0*qt(p = 0.975, df = nrow(J)-ncol(J))
+CI.gamma1 = gamma_hat[2] + c(-1,1)*se.gamma1*qt(p = 0.975, df = nrow(J)-ncol(J))
+
+print(t_value)
+print(p_value)
+print(CI.gamma1)
+```
+
+(3)
+-----
+
+We know under large sample, we can take $\frac{\hat{\gamma_j}-\gamma_j}{s(\hat{\gamma_j})}$ as a approximate t distribution with degree $n-p$, where we can estimate $s^2(\hat{\gamma})=MSE(\hat{J^T}\hat{J})^{-1}$, where $MSE=\frac{1}{n-p}\sum\ resid^2$.
+
+To get the test stat and p-value, we need to derive the matrix $J$. According to my calculation, $J_{i1}=\frac{X_i}{\gamma_1+X_i}$ and $J_{i2}=-\frac{\gamma_0X_i}{(\gamma_1+X_i)^2}$.
+
+Then we can derive the stat: $T=\frac{\hat{\gamma_j}-\gamma_j}{\sqrt{MSE(\hat{J^T}\hat{J})^{-1}}}$
+
+Now we calculate the value of the stat and p-value.
+
+```{r}
+f1 <- function(x,gamma0,gamma1){
+  return(x/(gamma1+x))
+}
+f2 <- function(x,gamma0,gamma1){
+  return((-gamma0*x)/(gamma1+x)^2)
+}
+
+J <- matrix(nrow = nrow(Kinet),ncol = 2)
+for(i in 1:2){
+  for(j in 1:nrow(Kinet)){
+    if(i==1){
+      J[j,i] <- f1(Kinet$X[j],28.1370,12.5745)
+    }
+    if(i==2){
+      J[j,i] <- f2(Kinet$X[j],28.1370,12.5745)
+    }
+  }
+}
+MSE <- (1/16)*sum(nlm1_Res$resi1[,2]^2)
+s_2 <- MSE*solve(t(J)%*%J)
+s_gamma1 <- sqrt(s_2[2,2])
+T_stat <- (12.5745-20)/s_gamma1
+p <- pt(T_stat,16)
+cat("The stat T=",T_stat,", and the p-value=",2*p,"\n")
+```
+
+\newpage
+
+3.
+=====
+
+Now we perform bootstrap with 1000 samples and calculate the 95% percentile intervals for $\gamma_1$.
+```{r}
+nlmBoot1 <- nlsBoot(nlm1,niter = 1000)
+nlmBoot1$bootCI[2,2:3]
+```
+
+Now we calculate the confidence interval based on the large sample theory.
+```{r}
+upper <- 12.5745+qt(0.975,16)*s_gamma1
+lower <- 12.5745+qt(0.025,16)*s_gamma1
+cat("95% CI based on the large sample theory:","[",lower,upper,"]","\n")
+```
+
+We can see that the 95% CI given by large sample theory is wider than 95% CI given by bootstrapping, but they are quite close to each other.
