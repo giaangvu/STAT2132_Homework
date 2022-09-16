@@ -1,0 +1,124 @@
+---
+title: "HW5"
+author: "Giang Vu"
+date: "2/22/2021"
+output: pdf_document
+---
+
+### (c)
+
+```{r echo=FALSE, warning=FALSE,out.width="80%"}
+#libraries
+library(MASS)
+
+#import data
+q1c <- data.frame(read.table(file = "/Users/giangvu/Desktop/STAT 2132 - Applied Stat Method 2/HW/HW5/Q1c.txt", header = T, sep = "\t", stringsAsFactors = F))
+q1c$X <- as.numeric(q1c$X)
+q1c <- q1c[1:200,]
+
+# #fit model Mi
+q1c$Y <- factor(as.numeric(q1c$Y), levels = c(1,2,3), labels = c("1","2","3"), ordered = T)
+# q1c.fit <- MASS::polr(Y ~ X , data = q1c)
+
+
+###### 
+#Mi
+q1c$Y1 <- ifelse(q1c$Y==1,1,0)
+q1c$Y1 <- factor(as.numeric(q1c$Y1), levels = c(0,1), labels = c("0","1"), ordered = T)
+q1c.fit1 <- glm(Y1 ~ X, family = binomial(link = "logit"), data = q1c)
+
+
+
+#fit model Mii
+q1c$Y2 <- ifelse(q1c$Y==3,0,1)
+q1c$Y2 <- factor(as.numeric(q1c$Y2), levels = c(0,1), labels = c("0","1"), ordered = T)
+
+q1c.fit2 <- glm(Y2 ~ X, family = binomial(link = "logit"), data = q1c)
+
+
+```
+The fitted models are  
+
+#### (Mi) 
+$logit(\hat{\pi}_{i1}) = 0.5932 + 1.9634x_i$
+
+#### (Mii)
+$logit(\hat{\pi}_{i1}+\hat{\pi}_{i2}) = 3.707 + 2.258x_i$
+
+#### (i) & (ii)
+Below is the plot of estimated probabilities from (Mi) and the estimated probabilities from (Mii) as a function of xi (red and blue), as well as the logit of them as a function of xi (orange and green).
+```{r echo=FALSE, warning=FALSE,out.width="80%"}
+#plot for (i) - red + blue
+plot(x=q1c$X,y= q1c.fit1$fitted.values,col="red",ylim = c(0,1),ylab="Estimated Probabilities", xlab = "X")
+points(x=q1c$X,y=q1c.fit2$fitted.values,col="blue")
+legend(-3.8,0.9,pt.bg = c("red","blue"),pch = c(1,1),legend = c("Model 1", "Model 2"),col = c("red","blue"))
+```
+
+```{r echo=FALSE, warning=FALSE,out.width="80%"}
+#plot for (ii) - orange +green
+plot(x=q1c$X,y = log(q1c.fit1$fitted.values/(1-q1c.fit1$fitted.values)),col="orange",ylab="Logit of Estimated Probabilities", xlab = "X",ylim = c(-8,10))
+points(x=q1c$X,y = log(q1c.fit2$fitted.values/(1-q1c.fit2$fitted.values)),col="green")
+legend(-3.8,8,pt.bg = c("orange","green"),pch = c(1,1),legend = c("Model 1", "Model 2"),col = c("orange","green"))
+
+
+```
+
+
+
+### (d)
+```{r echo=FALSE, warning=FALSE,out.width="80%"}
+#libraries
+library(MASS)
+
+#import data
+q1d <- data.frame(read.table(file = "/Users/giangvu/Desktop/STAT 2132 - Applied Stat Method 2/HW/HW5/Q1d.txt", header = T, sep = "\t", stringsAsFactors = F))
+q1d$X <- as.numeric(q1d$X)
+
+#fit model Mi & Mii
+q1d$Y <- factor(as.numeric(q1d$Y), levels = c(1,2,3), labels = c("1","2","3"), ordered = T)
+#q1d.fit <- MASS::polr(Y ~ X , data = q1d)
+
+q1d$Y1 <- ifelse(q1d$Y==1,1,0)
+q1d$Y1 <- factor(as.numeric(q1d$Y1), levels = c(0,1), labels = c("0","1"), ordered = T)
+q1d.fit1 <- glm(Y1 ~ X, family = binomial(link = "logit"), data = q1d)
+
+#fit model Mii
+q1d$Y2 <- ifelse(q1d$Y==3,0,1)
+q1d$Y2 <- factor(as.numeric(q1d$Y2), levels = c(0,1), labels = c("0","1"), ordered = T)
+
+q1d.fit2 <- glm(Y2 ~ X, family = binomial(link = "logit"), data = q1d)
+
+```
+Using another sample, the fitted models are  
+
+#### (Mi) 
+$logit(\hat{\pi}_{i1}) = 1.584 + 4.684x_i$
+
+#### (Mii)
+$logit(\hat{\pi}_{i1}+\hat{\pi}_{i2}) = 2.441 + 1.153x_i$
+
+#### (i) & (ii)
+Below is the plot of estimated probabilities from (Mi) and the estimated probabilities from (Mii) as a function of xi (red and blue), as well as the logit of them as a function of xi (orange and green).
+
+```{r echo=FALSE, warning=FALSE,out.width="80%"}
+#plot for (i) - red + blue
+plot(x=q1d$X,y= q1d.fit1$fitted.values,col="red",ylim = c(0,1),ylab="Estimated Probabilities", xlab = "X")
+points(x=q1d$X,y=q1d.fit2$fitted.values,col="blue")
+legend(-3.8,0.9,pt.bg = c("red","blue"),pch = c(1,1),legend = c("Model 1", "Model 2"),col = c("red","blue"))
+
+```
+
+```{r echo=FALSE, warning=FALSE,out.width="80%"}
+#plot for (ii) - orange +green
+plot(x=q1d$X,y=  log(q1d.fit1$fitted.values/(1-q1d.fit1$fitted.values)),col="orange",ylab="Logit of Estimated Probabilities", xlab = "X",ylim =c(-8,10) )
+points(x=q1d$X,y=log(q1d.fit2$fitted.values/(1-q1d.fit2$fitted.values)),col="green")
+legend(-3.8,8,pt.bg = c("orange","green"),pch = c(1,1),legend = c("Model 1", "Model 2"),col = c("orange","green"))
+
+```
+
+### (e)
+
+From the plots in parts (c) and (d), I am more comfortable fitting the proportional odds model to Q1d.txt sample because in Q1d.txt data, the plots of two different models cross each other. In the proportional odds model given, we see that the two models we want to fit have the same slope $\beta$. Therefore we would expect the plots of two models to be kind of parallel in Q1c.txt, not crossing like Q1d.txt
+
+
+
