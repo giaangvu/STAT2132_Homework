@@ -1,0 +1,96 @@
+---
+title: "hw3"
+author: "Giang Vu"
+date: "2/10/2021"
+output: pdf_document
+---
+
+## Homework 3
+
+### (a)
+
+The model I am assuming is  
+  $logit(\pi_i)=\beta_0+\beta_1log_2(X_i)$  
+  where $\pi_i=Y_i/m$ is the mortality rate.   
+  $\beta_0$ is log odds of $Y_i=1$ when $log_2(X_i)=0$.  
+  $\beta_1$ is the log odds ratio between log dose $X_{i+1}$ and log dose $X_i$.   
+  $Y_i|X_i$ are assumed to be independent.   
+
+### (b)
+
+After fitting the model using quasibinomial family with logic link, the plot of the fitted mortality rate and raw mortality fractions y/m against log dose is obtained below. Looking at the fit of the model, we could see that it fits quite well. I checked residual plot and qq-plot and the constant variances and normality assumptions are both satisfied as well.
+
+```{r echo=FALSE, warning=FALSE,out.width="80%"}
+#create df
+toxic <- data.frame(log2x = c(0,1,2,3,4,5),
+                    mortality = c(0/7,2/9,3/8,5/7,7/9,10/11))
+
+#fit logistic model #used quasi because Yi is not exactly binomial
+toxic.fit <- glm(mortality ~ log2x, family = quasibinomial(link = "logit"), data = toxic)
+toxic.sum <- summary(toxic.fit)
+
+#plot raw data
+plot(toxic$log2x, toxic$mortality, xlab="Log Dose", ylab="Mortality Rate")
+#plot fitted
+lines(toxic$log2x, fitted(toxic.fit), col="red")
+#model assumed in part a seems reasonable
+
+```
+
+```{r echo=FALSE, warning=FALSE,out.width="80%"}
+#residual plot - constant variances - satisfied
+plot(fitted(toxic.fit), toxic.fit$residuals, xlab="Fitted values", ylab="Residuals",main = "Residual plot"); abline(h=0, col="red", lty=2)
+```
+
+```{r echo=FALSE, warning=FALSE,out.width="80%"}
+#qq plot - normality
+qqnorm(toxic.fit$residuals, ylab="Residuals")
+qqline(toxic.fit$residuals, col="red")
+```
+    
+\newpage    
+    
+### (c)
+
+```{r eval=FALSE, warning=FALSE, include=FALSE,echo=F}
+#c
+#(ii)
+#new model with scaled log2x
+toxic.r <- toxic
+toxic.r$log2x <- toxic.r$log2x - 4
+toxic.fit.r <- glm(mortality ~ 0+log2x, family = quasibinomial(link = "logit"), data = toxic.r)
+toxic.sum.r<-summary(toxic.fit.r)
+
+#likelihood test
+lr.stat <- toxic.fit.r$deviance - toxic.fit$deviance
+pvalue.H0.lr <- pchisq(q = lr.stat, df = 1, lower.tail = F)
+```
+   
+#### (iii)
+
+I didn't understand what "plot the restricted log likelihood against the hypothesized value of log2(gamma)" is, because restricted log likelihood is one number, and the hypothesized value of log2(gamma) is 4 (null hypothesis in the previous part), so if I were to plot it it would be just a single point in the plane, so I did not understand how that would help with constructing a confidence interval.    
+  I used some built in function to generate the 95% confidence interval for the parameter of the restricted model to be (0.083, 1.14), so the 95% confidence interval for gamma would be (1.06, 2.20). This also doesn't really make sense because we fail to reject that gamma = 4 earlier, but 4 is outside of this confidence interval.
+```{r echo=FALSE, warning=FALSE,eval=F}
+#construct likelihood based confidence set for gamma
+2**confint(toxic.fit.r,level = 0.95)
+
+```
+
+
+
+```{r echo=FALSE, warning=FALSE,eval=F}
+#(d) (v)
+fit.pearson.0 <- glm(Y ~ color, family = binomial(link = "logit"), data = Data)
+toxic.fit <- glm(mortality ~ log2x, family = quasibinomial(link = "logit"), data = toxic)
+
+Observed <- t(sapply(1:length(unique(toxic$log2x)), function(i){ind.i <- toxic$log2x==i; c(sum(toxic$mortality[ind.i]),sum(ind.i)-sum(toxic$mortality[ind.i]))}))
+rownames(Observed) <- c("1", "2", "3", "4","5","6"); colnames(Observed) <- c("Y=1", "Y=0")
+
+predicted <- exp(predict(toxic.fit))/(1+exp(predict(toxic.fit)))
+Expected <- t(sapply(1:length(unique(toxic$log2x)), function(i){ind.i <- toxic$log2x==i; c(sum(predicted[ind.i]),sum(ind.i)-sum(predicted[ind.i]))}))
+rownames(Expected) <- c("1", "2", "3", "4","5","6"); colnames(Expected) <- c("Y=1", "Y=0")
+
+Pearson.X2 <- sum((Observed-Expected)^2/Expected, na.rm = T)
+pchisq(q = Pearson.X2, df = 6-2, lower.tail = F)
+```
+
