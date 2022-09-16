@@ -1,0 +1,57 @@
+---
+title: "HW8"
+author: "Giang Vu"
+date: "4/3/2021"
+output: pdf_document
+---
+
+```{r message=FALSE, warning=FALSE, include=FALSE, paged.print=FALSE}
+library(dplyr)
+library(plyr)
+library(tidyr)
+library(ggplot2)
+library(purrr)
+library(tibble)
+#setwd("/Users/giangvu/Desktop/STAT 2132 - Applied Stat Method 2/HW/HW9")
+```
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = F,warning=FALSE,out.width="80%")
+```
+
+
+## 4.\
+
+### (a)\
+
+The first model's estimate for $\sigma$ is 11.6, and the second model's estimate is 4.3.\
+
+The second model with only treatments C and D has smaller estimate, probably because C and D are of the same drug type so the variance among them is smaller, unlike when we include A and B which are completely different treatments.\
+
+```{r}
+#load data
+sleep <- data.frame(read.table(file = "sleep.txt", header = T, sep = "\t", stringsAsFactors = F))
+sleep$Individual <- as.factor(sleep$Individual)
+sleep$Treatment <- as.factor(sleep$Treatment)
+
+#additive fixed effect model
+sleep.fit1 <- aov(Hours ~ Individual + Treatment, data = sleep)
+#estimate sigma by sqrt(MSE)
+summary(sleep.fit1) #trt effect is not signi
+sqrt(134.3) #model 1 estimate
+
+#another additive but w/o B and A
+sleep.fit2 <- aov(Hours ~ Individual + Treatment, data = sleep[sleep$Treatment %in% c("C","D"),])
+#estimate sigma by sqrt(MSE)
+summary(sleep.fit2)
+sqrt(18.3) #model 2 estimate
+
+#second model with only C and D has smaller estimate, probably because C and D are of the same drug type so the variance is smaller, unlike A and B which are completely different treatment.
+```
+
+### (b)\
+
+Because the mean squared error for the model 1 (full data) is much larger than model 2 (only treatments B and C), and also the estimate for the treatment effect in model 2 is not statistically significant, it would be reasonable to expect that model 1 fails to account for some of the treatment effect difference between A, B, and C and D. Therefore, we have some evidence to believe that adding an interaction term in our model would be useful here to eliminate this issue with problem 1.
+
+\newpage
+
