@@ -1,0 +1,291 @@
+---
+title: "HW9"
+author: "Giang Vu"
+date: "4/22/2021"
+output: pdf_document
+---
+
+```{r message=FALSE, warning=FALSE, include=FALSE, paged.print=FALSE}
+library(dplyr)
+library(plyr)
+library(tidyr)
+library(ggplot2)
+library(purrr)
+library(tibble)
+#setwd("/Users/giangvu/Desktop/STAT 2132 - Applied Stat Method 2/HW/HW9")
+```
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = F,warning=FALSE,out.width="80%")
+```
+
+#Homework 9
+
+## 1.\
+
+### (a)\
+
+Use REML + GLS to fit the model you proposed in part (c)(i) of Problem 4. Test the null hypothesis that there is no patient × treatment interaction. Make sure to report your null and alternative models.\
+
+Null hypothesis model is the model without interaction term.
+$Y_{ij}=\mu +\alpha_i + \beta_j + \epsilon_{ij}$\
+
+Model proposed in part (c)(i) is also our alternative hypothesis model\
+$Y_{ij}=\mu +\alpha_i + \beta_j + (\alpha\beta)_{ij}+\epsilon_{ij}$\
+where:\
+$i=1,2,...,10$\
+$j=1,2,3,4$\
+$Y_{ij}$ is average hours of sleep for patient i under treatment j.\
+$\mu$ is population mean hours of sleep, fixed.\
+$\alpha_i$ is random effect of patient i.\
+$\beta_j$ is fixed effect for treatment j.\
+$(\alpha\beta)_{ij}$ is interaction term for patient i and treatment j.\
+$\epsilon_{ij}$ is random error with patient i and treatment j.\
+Additional conditions:\
+$\sum(\alpha\beta)_{ij}=0$, $(\alpha\beta)_{ij} \sim N(0,\frac{3}{4}\sigma^2_{\alpha\beta})$\
+$\epsilon_{ij} \sim iid. N(0,\sigma^2)$, $\sum\beta_j=0$\
+$\alpha_{i} \sim independent\: N(0,\sigma^2_\alpha)$
+
+$H_0$: No interaction term is needed.\
+$H_1$: There should be an interaction term.\
+
+After fitting both models with REML, and use ANOVA to carry out the test to see if an interaction term is needed, I got a very small p-value for the test (0.0001594).\
+Assuming the null hypothesis is true, the probability of getting results as extreme as we got from our sample is very small.\
+It gives me evidence to believe that there should be an interaction term in our model.\
+
+```{r, eval=F}
+library(nlme)
+library(lme4)
+sleep <- data.frame(read.table(file = "/Users/giangvu/Desktop/STAT 2132 - Applied Stat Method 2/HW/HW9/sleep.txt", header = T, sep = "\t", stringsAsFactors = F))
+sleep$Individual <- as.factor(sleep$Individual)
+sleep$Treatment <- as.factor(sleep$Treatment)
+
+sleep.reml <- lmer(Hours ~ Treatment + Treatment:Individual + (1|Individual),data = sleep)
+summary(sleep.reml)
+
+#test existence of interaction
+sleep.reml2 <- lmer(Hours ~ Treatment + (1|Individual), data = sleep) #fit without interaction
+
+anova(sleep.reml,sleep.reml2, refit=F)
+#H0: no interaction
+#h1: interaction needed
+#small p val => reject H0
+
+```
+
+
+### (b)\
+
+I used the coefficient estimates from model in previous part and replace the overall intercept with y0 like proposed in part (c)(ii) on Problem 4 last homework, and predicted the average hours of sleep for each individual (from 1 to 10), when they are given different drugs (B, C, D) given that they sleep 2 and 6 hours before treatment, respectively.\
+The results I got show that drug C and drug D have more potent impacts than drug B, and whether the patients sleep 2 or 6 hours before treatment does have an impact on the result after treatment.\
+However, I am not sure what drug to recommend to each patient.\
+
+Predicted avg hours of sleep for each patient (from 1 to 10, respectively) given that they sleep 2 hours before treatment and then received:\
+- drug B is: 9.693294 22.544908 43.387362 20.069915 28.715824  9.393797 34.231670 18.905062 17.246995 24.841478 \
+- drug C is: 35.67511 48.52673 69.36918 46.05173 54.69764 35.37561 60.21349 44.88688 43.22881 50.82330 \
+- drug D is: 35.82057 48.67218 69.51463 46.19719 54.84310 35.52107 60.35894 45.03233 43.37427 50.96875 \
+
+Predicted avg hours of sleep for each patient (from 1 to 10, respectively) given that they sleep 6 hours before treatment and then received:
+- drug B is: 13.69329 26.54491 47.38736 24.06991 32.71582 13.39380 38.23167 22.90506 21.24699 28.84148 \
+- drug C is: 39.67511 52.52673 73.36918 50.05173 58.69764 39.37561 64.21349 48.88688 47.22881 54.82330 \
+- drug D is: 39.82057 52.67218 73.51463 50.19719 58.84310 39.52107 64.35894 49.03233 47.37427 54.96875 \
+
+```{r, eval=F}
+#predict for y0 = 2 with drug B, C, and D
+test <- numeric(10)
+for (i in 1:10){
+  test[i] <- 2 + ranef(sleep.reml)[[1]][i,] + summary(sleep.reml)$coef[2] + summary(sleep.reml)$coef[6]
+}
+print("Predicted avg hours of sleep for each patient (from 1 to 10, respectively) given that they sleep 2 hours before treatment and then received:")
+print("drug B is:")
+test
+
+for (i in 1:10){
+  test[i] <- 2 + ranef(sleep.reml)[[1]][i,] + summary(sleep.reml)$coef[3] + summary(sleep.reml)$coef[7]
+}
+
+print("drug C is")
+test
+
+for (i in 1:10){
+  test[i] <- 2 + ranef(sleep.reml)[[1]][i,] + summary(sleep.reml)$coef[4] + summary(sleep.reml)$coef[8]
+}
+
+print("drug D is")
+test
+
+#predict for y0 = 6 with drug B, C, and D
+test <- numeric(10)
+for (i in 1:10){
+  test[i] <- 6 + ranef(sleep.reml)[[1]][i,] + summary(sleep.reml)$coef[2] + summary(sleep.reml)$coef[6]
+}
+
+print("Predicted avg hours of sleep for each patient (from 1 to 10, respectively) given that they sleep 6 hours before treatment and then received:")
+print("drug B is:")
+test
+
+for (i in 1:10){
+  test[i] <- 6 + ranef(sleep.reml)[[1]][i,] + summary(sleep.reml)$coef[3] + summary(sleep.reml)$coef[7]
+}
+
+print("drug C is:")
+test
+
+for (i in 1:10){
+  test[i] <- 6 + ranef(sleep.reml)[[1]][i,] + summary(sleep.reml)$coef[4] + summary(sleep.reml)$coef[8]
+}
+
+print("drug D is:")
+test
+
+```
+
+\newpage
+
+## 3.\
+
+### (a)\
+
+For age 1,\
+The estimation of the expected difference in log-concentration between patients with $Wheeze=2$ and those with $Wheeze=0$ is the coefficient estimate for Wheeze2 in the model I ran, which is -0.314. This estimate has a 95% confidence interval of (-0.867, 0.239).\
+
+For age 3,\
+Similarly, I obtained the point estimate -0.0844, with a 95% confidence interval of (-0.410, 0.241).\
+
+```{r}
+#import and prep data
+age1 <- data.frame(read.table(file = "/Users/giangvu/Desktop/STAT 2132 - Applied Stat Method 2/HW/HW9/Age1.txt", header = T, sep = "\t", stringsAsFactors = F))
+#age1$IndividualID <- as.factor(age1$IndividualID)
+age1$Wheeze <- as.factor(age1$Wheeze)
+age1$Diet <- as.factor(age1$Diet)
+age1$Daycare <- as.factor(age1$Daycare)
+age1$Sex <- as.factor(age1$Sex)
+
+age3 <- data.frame(read.table(file = "/Users/giangvu/Desktop/STAT 2132 - Applied Stat Method 2/HW/HW9/Age3.txt", header = T, sep = "\t", stringsAsFactors = F))
+#age3$IndividualID <- as.factor(age3$IndividualID)
+age3$Wheeze <- as.factor(age3$Wheeze)
+age3$Diet <- as.factor(age3$Diet)
+age3$Daycare <- as.factor(age3$Daycare)
+age3$Sex <- as.factor(age3$Sex)
+
+#fit additive models
+age1.fit <- lm(Bilirubin ~ ., data = age1)
+age3.fit <- lm(Bilirubin ~ ., data = age3)
+
+age1.fit
+age3.fit
+
+#CI
+confint(age1.fit)
+confint(age3.fit)
+```
+
+### (b)\
+
+Below is the QQ plot to compare the sample distribution of the log concentration bilirubin data versus the theoretical normal distribution.\
+We can see that it's quite close so this assumption of normal distribution or t-distribution might be trustworthy.\
+
+```{r}
+qqnorm(age1$Bilirubin, pch = 1, frame = FALSE)
+qqline(age1$Bilirubin, col = "steelblue", lwd = 2)
+```
+
+### (c)\
+
+I combined the data of both ages together and refit the model, and the point estimate for $\beta$ is -0.158 and the 95% CI is (-0.445, 0.130).\
+
+
+```{r}
+#stack data
+age.full <- rbind(age1,age3)
+
+#refit without intercept
+age.full.fit <- lm(Bilirubin ~.,data = age.full)
+
+confint(age.full.fit)
+```
+
+### (d)\
+
+The CI in part (c) compared to CIs in part (a) is actually narrower.\
+I think it is appropriate to assume normality like we did in (c) because as shown in (b) with the QQ plot, normality assumption is reliable.\
+
+
+### (e)\
+
+#### (i)\ 
+Because $\phi$ is the covariance from same person at different age, so we would expect it to be positive.
+
+#### (ii)\
+The confidence intervals calculated in part (a) for age 1 and age 3 data don't overlap, i.e., no CI completely lies inside the other CI, so that give us no evidence to say that their variances $\sigma_1^2$ and $\sigma_3^2$ should be different.\
+It is reasonable to assume $\sigma_1^2=\sigma_3^2$.\
+
+
+### (f)\
+
+I decided to fit this model on the stacked data of age1 and age3 datasets, with an added factor age that specifies if the measurement is taken at age 1 or age 3.\
+Treating the IndividualID as random effect, and Age and the rest as fixed effect, I got the estimate for $\sigma_j^2$ and $\phi$ as 0.097 and 0.121, respectively.\
+
+```{r}
+age1$age <- 1
+age3$age <- 3
+age.full2 <- rbind(age1,age3)
+age.full2$age <- as.factor(age.full2$age)
+age.full.fit2 <- nlme::lme(Bilirubin ~ age + Wheeze + Diet + Daycare + Sex, random = ~1|IndividualID,method = "ML",data = age.full2)
+0.3107893^2
+0.3478418^2
+
+```
+
+\newpage
+
+### (h)\
+
+I created a new variable Z as defined by the question in each dataset for age 1 and age 3, and fit the models again using Z instead of Wheeze, and obtained the OLS estimates for $\beta_1$ and $\beta_3$ as -0.386 and -0.068, respectively.\
+The variances for these estimates are 0.076 and 0.026, respectively.
+
+```{r}
+
+age1 <- data.frame(read.table(file = "/Users/giangvu/Desktop/STAT 2132 - Applied Stat Method 2/HW/HW9/Age1.txt", header = T, sep = "\t", stringsAsFactors = F))
+age3 <- data.frame(read.table(file = "/Users/giangvu/Desktop/STAT 2132 - Applied Stat Method 2/HW/HW9/Age3.txt", header = T, sep = "\t", stringsAsFactors = F))
+
+age1$Wheeze <- as.factor(age1$Wheeze)
+age1$Diet <- as.factor(age1$Diet)
+age1$Daycare <- as.factor(age1$Daycare)
+age1$Sex <- as.factor(age1$Sex)
+age3$Wheeze <- as.factor(age3$Wheeze)
+age3$Diet <- as.factor(age3$Diet)
+age3$Daycare <- as.factor(age3$Daycare)
+age3$Sex <- as.factor(age3$Sex)
+
+
+age1$Z <-ifelse(age1$Wheeze=="2",1, 0)
+age3$Z <- ifelse(age3$Wheeze=="2",1, 0)
+age1$Z <- as.factor(age1$Z)
+age3$Z <- as.factor(age3$Z)
+
+age1.fit.h <- lm(Bilirubin ~.,data = age1[,-3])
+age3.fit.h <- lm(Bilirubin ~.,data = age3[,-3])
+summary(age1.fit.h)
+summary(age3.fit.h)
+```
+
+### (i)\
+
+I rerun (c) but this time with new variable Z instead of Wheeze.\
+The estimate for $\beta$ is -0.162 with a 95% CI of (-0.446, 0.123), which is quite close the result in part (c).\
+
+```{r}
+#stack data
+age.full3 <- rbind(age1,age3)
+
+#refit without intercept
+age.full.fit3 <- lm(Bilirubin ~.,data = age.full3[,-3])
+
+confint(age.full.fit3)
+```
+
+
+
+
+
