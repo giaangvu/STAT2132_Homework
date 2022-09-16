@@ -1,0 +1,134 @@
+---
+title: "hw1"
+author: "Giang Vu"
+date: "1/23/2021"
+output: pdf_document
+---
+
+```{r message=FALSE, warning=FALSE, include=FALSE, paged.print=FALSE}
+library(ggrepel)
+library(ggplot2)
+library(dplyr)
+library(Hmisc)
+library(readxl)
+library(DBI)
+library(odbc)
+library(readr)
+library(writexl)
+library(knitr)
+library(clipr)
+library(car)
+library(MASS)
+library(np)
+library(olsrr)
+library(chemometrics)
+library(pls)
+library(glmnet)
+```
+
+## Homework 1
+
+### a)
+
+If the data didn't support the null, we would conclude that value of g differs through time. Because wa are already assuming that the scientists tried really hard to make sure the measurements are of the same location, the only thing that is different between different measurements is when they were taken. So maybe time could also affect the gravity acceleration g.
+
+### b)
+
+Null hypothesis: the means of the 8 series are equal  
+  Alternative hypothesis: the means of the 8 series are not equal  
+  Assumptions: data are normally distributed with equal variances and the samples (series of measurements) are independent from one another.  
+  An ANOVA F test was carried out and the F stat is 3.62, p value is small (0.00211) => we reject the null hypothesis.
+
+```{r echo=TRUE, warning=FALSE}
+#read data
+gravity <- read.delim("/Users/giangvu/Desktop/STAT 2132 - Applied Stat Method 2/HW/HW1/Gravity.txt")
+# anova f test
+gravity.aov <- aov(Value ~ as.character(Series), data = gravity)
+# Summary of the analysis
+summary(gravity.aov)
+```
+
+### c)
+
+The likelihood ratio statistic was obtained by comparing two models, one with the assumption of equal variances among series, and another with the assumption of different variances among series using ANOVA. The likelihood ratio statisic is 18.187, with a small p-value of 0.0112 so it is statistically significant.
+```{r echo=TRUE, warning=FALSE}
+gravity$Series <- as.factor(gravity$Series)
+library(nlme)
+#Model with different variances
+model1 <- gls(Value~Series,data=gravity,
+              method ="ML", 
+              weights = varIdent(form = ~1|Series))
+
+#Model with equal variance assumption
+model2 <- gls(Value~1,data=gravity,
+              method ="ML", 
+              weights = varIdent(form = ~1|Series))
+
+#likelihood ratio test to compare the two models
+anova(model1,model2)
+```
+
+### d)
+
+In the plot below, data points represent measurements in a chronological order from left to right, colors signify different series, series are also ordered chronologically from left to right.  
+  The more test the scientists carried out at that location, the more stable the result seemed to be. The variance of the first series of measurements are quite large compared to the later series.  
+  This could mean that the samples (series) may not be independent from one another (the first measurements could have impacted the later measurements somehow) => our assumption might have been violated.
+
+```{r echo=FALSE, warning=FALSE}
+gravity$index <- row.names(gravity)
+plot(gravity$index,gravity$Value, xlab = "Measurement (in chronological order)", ylab = "Value of g",
+     col=ifelse(gravity$Series==1, "red", 
+                ifelse(gravity$Series==2,"blue",
+                       ifelse(gravity$Series==3,"orange",
+                              ifelse(gravity$Series==4,"#FF66CC",
+                                     ifelse(gravity$Series==5,"green",
+                                            ifelse(gravity$Series==6,"purple",
+                                                   ifelse(gravity$Series==7,"#FFCC33","black"))))))))
+```
+
+### e)
+
+First I tried removing outliers (using IQR rule) and repeat the previous analyses again. I failed to reject null hypothesis that the mean of different series are equal, so that is a better outcome than original data. The likelihood ratio statistics of 2 models, one with equal variance assumption, and one without it, is no longer statistically significant with the new data. This means with this new data we can safely assume equal variance, which can also be seen in the new plot. Then it would make sense to use the mean of the new data to get the estimate for g. Our estimate would then be 9.800785 m/s^2 with a standard error of 0.6442267.  
+  This shows us that our original data has some serial correlation, the samples are not independent, that's why our previous analysis had some violated assumption, leading to undesirable results.
+
+```{r echo=TRUE, warning=FALSE}
+#remove outliers
+iqr<-IQR(gravity$Value)
+upbound <- quantile(gravity$Value,3/4,names = F)+iqr*1.5
+lowbound <- quantile(gravity$Value,1/4,names = F)-iqr*1.5
+gravity1 <- gravity[gravity$Value<=upbound & gravity$Value>=lowbound,]
+
+#ANOVA
+summary(aov(Value ~ Series, data = gravity1))
+
+#likelihood ratio
+#model with different variance
+model3 <- gls(Value~Series,data=gravity1,
+              method ="ML", 
+              weights = varIdent(form = ~1|Series))
+
+#Model with equal variance assumption
+model4 <- gls(Value~1,data=gravity1,
+              method ="ML", 
+              weights = varIdent(form = ~1|Series))
+
+#likelihood ratio test to compare the two models
+anova(model3,model4)
+
+#plot for new data
+plot(gravity1$index,gravity1$Value, xlab = "Measurement (in chronological order)", ylab = "Value of g",
+     col=ifelse(gravity1$Series==1, "red", 
+                ifelse(gravity1$Series==2,"blue",
+                       ifelse(gravity1$Series==3,"orange",
+                              ifelse(gravity1$Series==4,"#FF66CC",
+                                     ifelse(gravity1$Series==5,"green",
+                                            ifelse(gravity1$Series==6,"purple",
+                                                   ifelse(gravity1$Series==7,"#FFCC33","black"))))))))
+
+#mean of values
+mean(gravity1$Value)
+#standard error
+sd(gravity1$Value)/sqrt(nrow(gravity1))
+```
+
+
